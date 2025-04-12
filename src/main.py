@@ -8,7 +8,7 @@ import sys
 
 
 def main():
-    mapa = Map("src/data/mapa_skyrim.txt")
+    mapa = Map("data/mapa_skyrim.txt")
 
     caminho = caminho_final(mapa, mapa.events)
     print(f"Caminho encontrado com {len(caminho)} passos:")
