@@ -1,57 +1,7 @@
 from queue import PriorityQueue
-from utils import *
-from map import map, time, events
+from utils import manhattan_distance
+from map.Map import Map
 
-
-x = len(map[0]) 
-y = len(map)
-
-
-def get_value(c):
-    
-    if c in time:
-        return time[c]
-    elif c in events:
-        return 1
-    else:
-        return -1
-
-def get_char_from_map(mapa, coord):
-    return mapa[coord[1]][coord[0]]
-
-def get_value_from_map(mapa, coord):
-    return get_value(get_char_from_map(mapa, coord))
-
-
-def add_valid_pos(nb, mapa, coord):        
-    if get_value_from_map(mapa, coord) > -1:
-        nb.append(coord)
-
-def get_neighborhood(mapa, coord):
-    
-    nb = []
-    if coord[0] == 0:
-        add_valid_pos(nb, mapa, (coord[0] + 1, coord[1]))
-    
-    elif coord[0] == x - 1:
-        add_valid_pos(nb, mapa, (coord[0] - 1, coord[1]))
-    
-    else:    
-        add_valid_pos(nb, mapa, (coord[0] + 1, coord[1]))
-        add_valid_pos(nb, mapa, (coord[0] - 1, coord[1]))
-    
-
-    if coord[1] == 0:
-        add_valid_pos(nb, mapa, (coord[0], coord[1] + 1))
-    
-    elif coord[1] == y - 1:
-        add_valid_pos(nb, mapa, (coord[0], coord[1] - 1))
-    
-    else:    
-        add_valid_pos(nb, mapa, (coord[0], coord[1] + 1))
-        add_valid_pos(nb, mapa, (coord[0], coord[1] - 1))
-    
-    return nb
 
 def escolher_ordem(events):
     ordem_visita = []
@@ -84,18 +34,16 @@ def escolher_ordem(events):
         current_pos = events[proximo_evento]
 
     ordem_visita.append(end_event)
-
     return ordem_visita
 
 
-def busca_a_estrela(mapa, start, end):
-
+def busca_a_estrela(mapa: Map, start, end):
     open_list = PriorityQueue()
     open_list.put((0 + manhattan_distance(start, end), 0, start))
     came_from = {}
     g_score = {start: 0}
     f_score = {start: manhattan_distance(start, end)}
-    
+
     while not open_list.empty():
         _, g, current = open_list.get()
 
@@ -108,8 +56,8 @@ def busca_a_estrela(mapa, start, end):
             path.reverse()
             return path
 
-        for nb in get_neighborhood(mapa, current):
-            tentative_g_score = g + get_value_from_map(mapa, nb)
+        for nb in mapa.get_neighbors(current):
+            tentative_g_score = g + mapa.get_value(nb)
 
             if nb not in g_score or tentative_g_score < g_score[nb]:
                 came_from[nb] = current
@@ -119,11 +67,18 @@ def busca_a_estrela(mapa, start, end):
 
     return None
 
-def caminho_final(mapa, events, personagens= None):
+
+def caminho_final(mapa: Map, events, personagens=None):
     ordem = escolher_ordem(events)
     path_total = []
+
     for i in range(len(ordem) - 1):
         inicio = events[ordem[i]]
         fim = events[ordem[i + 1]]
-        path_total += busca_a_estrela(mapa, inicio, fim)
+        caminho = busca_a_estrela(mapa, inicio, fim)
+        if caminho:
+            path_total += caminho
+        else:
+            print(f"Nenhum caminho encontrado de {ordem[i]} para {ordem[i+1]}")
+
     return path_total
