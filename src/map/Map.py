@@ -28,7 +28,7 @@ class Map:
         if cell in TERRAIN_COSTS:
             return TERRAIN_COSTS.get(cell)
         else:
-            return 1
+            return 0
         
 
     def get_neighbors(self, coord):
