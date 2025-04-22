@@ -82,3 +82,41 @@ def caminho_final(mapa: Map, events, personagens=None):
             print(f"Nenhum caminho encontrado de {ordem[i]} para {ordem[i+1]}")
 
     return path_total
+
+def calcular_custo_trajeto(path, mapa):
+    if not path:
+        return float('inf')
+    
+    return sum(mapa.get_value(pos) for pos in path[1:])
+
+def gerar_matriz_distancias(mapa, eventos):
+    dist = {i: {} for i in eventos}
+
+    for i in eventos:
+        for j in eventos:
+            if i == j:
+                dist[i][j] = 0
+            else:
+                caminho = busca_a_estrela(mapa, eventos[i], eventos[j])
+                dist[i][j] = calcular_custo_trajeto(caminho, mapa)
+    
+    return dist
+
+def floyd_warshall(dist):
+    eventos = list(dist.keys())
+    for k in eventos:
+        for i in eventos:
+            for j in eventos:
+                if dist[i][j] > dist[i][k] + dist[k][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+    return dist
+
+def validar_caminhos(mapa, eventos, dist_floyd):
+    for i in eventos:
+        for j in eventos:
+            if i == j:
+                continue
+            caminho_a_estrela = busca_a_estrela(mapa, eventos[i], eventos[j])
+            custo_a_estrela = calcular_custo_trajeto(caminho_a_estrela, mapa)
+            if custo_a_estrela != dist_floyd[i][j]:
+                print(f"Caminho {i} → {j} | A*: {custo_a_estrela} | Floyd: {dist_floyd[i][j]}")
