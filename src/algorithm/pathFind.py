@@ -2,6 +2,48 @@ from queue import PriorityQueue
 from utils import manhattan_distance
 from map.Map import Map
 
+import random
+import math
+
+def calcular_custo(ordem, events):
+    total = 0
+    for i in range(len(ordem) - 1):
+        total += manhattan_distance(events[ordem[i]], events[ordem[i + 1]])
+    return total
+
+def gerar_vizinho(ordem):
+    i, j = random.sample(range(1, len(ordem) - 1), 2)
+    vizinho = ordem[:]
+    vizinho[i], vizinho[j] = vizinho[j], vizinho[i]
+    return vizinho
+
+def simulated_annealing(events, temp_inicial=100000, temp_final=1e-6, alpha=0.9999, iter_por_temp=500):
+    ordem_atual = escolher_ordem(events)
+    custo_atual = calcular_custo(ordem_atual, events)
+
+    melhor_ordem = ordem_atual[:]
+    melhor_custo = custo_atual
+
+    temp = temp_inicial
+
+    while temp > temp_final:
+        for _ in range(iter_por_temp):
+            vizinho = gerar_vizinho(ordem_atual)
+            custo_vizinho = calcular_custo(vizinho, events)
+            delta = custo_vizinho - custo_atual
+
+            if delta < 0 or random.random() < math.exp(-delta / temp):
+                ordem_atual = vizinho
+                custo_atual = custo_vizinho
+
+                if custo_atual < melhor_custo:
+                    melhor_ordem = ordem_atual[:]
+                    melhor_custo = custo_atual
+
+        temp *= alpha
+
+    return melhor_ordem
+
 
 def escolher_ordem(events):
     ordem_visita = []
@@ -69,7 +111,10 @@ def busca_a_estrela(mapa: Map, start, end):
 
 
 def caminho_final(mapa: Map, events, personagens=None):
-    ordem = escolher_ordem(events)
+    #ordem = simulated_annealing(events)
+    #MELHOR ORDEM ENCONTRADA EM VARIAS RODADAS DE SIMULATED ANNEALING:
+    ordem = ["0", "B", "K", "J", "I", "8", "6", "4", "7", "2", "1", "3", "G", "5", "C", "O", "D", "E", "H", "9", "P"]
+    #print(ordem, "rodou simmulated")
     path_total = []
 
     for i in range(len(ordem) - 1):

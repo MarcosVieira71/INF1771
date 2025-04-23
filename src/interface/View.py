@@ -9,7 +9,7 @@ from algorithm.pathFind import caminho_final
 
 
 class View(QWidget):
-    def __init__(self, mapa: Map, colors: dict):
+    def __init__(self, mapa: Map, colors: dict, caminho:list):
         super().__init__()
         self.mapa = mapa
         self.colors = colors
@@ -17,7 +17,7 @@ class View(QWidget):
         self.setWindowTitle('Mapa Skyrim')
         self.resize(1200, 450)
 
-        self.caminho = caminho_final(self.mapa, self.mapa.events)
+        self.caminho = caminho
         self.caminho_index = 0
         self.desenhar_caminho = []
 

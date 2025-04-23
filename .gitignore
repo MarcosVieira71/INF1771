@@ -1,4 +1,2 @@
-/src/__pycache__
-/src/map/__pycache__
-/src/algorithm/__pycache__
-/src/interface/__pycache__
+__pycache__
+env

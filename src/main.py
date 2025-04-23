@@ -12,20 +12,23 @@ def main():
 
     eventos = mapa.events
 
-    print("Gerando matriz de distâncias entre eventos (demora)")
-    dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
+    # print("Gerando matriz de distâncias entre eventos (demora)")
+    # dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
 
-    print("Rodando Floyd-Warshall")
-    dist_floyd = floyd_warshall(dist_a_estrela.copy())
+    # print("Rodando Floyd-Warshall")
+    # dist_floyd = floyd_warshall(dist_a_estrela.copy())
 
-    print("Testando caminhos A* contra Floyd-Warshall")
-    validar_caminhos(mapa, eventos, dist_floyd)
+    # print("Testando caminhos A* contra Floyd-Warshall")
+    # validar_caminhos(mapa, eventos, dist_floyd)
 
     caminho = caminho_final(mapa, mapa.events)
-    print(f"Caminho encontrado com {len(caminho)} passos:")
+    valor = 0
+    for i in caminho:
+        valor += mapa.get_value(i)
+    print(f"Caminho encontrado com {len(caminho)} passos:  e valor {valor}")
 
     app = QApplication(sys.argv)
-    janela = View(mapa, COLORS)
+    janela = View(mapa, COLORS, caminho)
     janela.show()
     sys.exit(app.exec())
 
