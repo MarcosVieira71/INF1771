@@ -10,7 +10,8 @@ import sys
 def main():
     mapa = Map("data/mapa_skyrim.txt")
 
-    eventos = mapa.events
+    eventos = mapa.eventsCoord
+
 
     # print("Gerando matriz de distâncias entre eventos (demora)")
     # dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
@@ -21,7 +22,7 @@ def main():
     # print("Testando caminhos A* contra Floyd-Warshall")
     # validar_caminhos(mapa, eventos, dist_floyd)
 
-    caminho = caminho_final(mapa, mapa.events)
+    caminho = caminho_final(mapa, eventos)
     valor = 0
     for i in caminho:
         valor += mapa.get_value(i)

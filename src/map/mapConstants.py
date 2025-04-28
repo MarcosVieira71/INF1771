@@ -21,4 +21,44 @@ COLORS = {
     '#': QColor(0, 0, 0)
 }
 
-EVENT_SYMBOLS = list('0123456789BCDEGHIJKOP')
+EVENT_COSTS = {
+    "0": 1,
+    "1": 55,
+    "2": 60,
+    "3": 65,
+    "4": 70,
+    "5": 75,
+    "6": 80,
+    "7": 85,
+    "8": 90,
+    "9": 95,
+    "B": 120,
+    "C": 125,
+    "D": 130,
+    "E": 135,
+    "G": 150,
+    "H": 155,
+    "I": 160,
+    "J": 170,
+    "K": 180,
+    "O": 100,
+    "P": 1
+}
+
+CHARACTER_POWER = {
+    "Dragonborn" : 1.8,
+    "Ralof" : 1.6,
+    "Lydia" : 1.4,
+    "Farengar Secret Fire" : 1.3,
+    "Balgruuf" : 1.2,
+    "Delphine" : 1.0
+}
+
+def calculo_custo_evento(evento, personagens):
+    soma = 0
+    for i in personagens:
+        soma += CHARACTER_POWER[i]
+
+    dificuldade_total = EVENT_COSTS[evento] / soma
+
+    return dificuldade_total

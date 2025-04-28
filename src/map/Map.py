@@ -8,7 +8,7 @@ class Map:
         self.grid = self.load_map_from_file(filename)
         self.height = len(self.grid)
         self.width = len(self.grid[0])
-        self.events = self._find_all_events()
+        self.eventsCoord = self._find_all_events()
 
     def load_map_from_file(self, filename):
         with open(filename, 'r') as f:
@@ -16,7 +16,7 @@ class Map:
 
     def _find_all_events(self):
         events = {}
-        for symbol in EVENT_SYMBOLS:
+        for symbol in EVENT_COSTS.keys():
             pos = find_char(self.grid, symbol)
             if pos:
                 events[symbol] = pos
