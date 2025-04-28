@@ -12,7 +12,7 @@ import sys
 
 
 def main():
-    map = Map("data/mapa_skyrim.txt")
+    map = Map("mapa_skyrim.txt")
     
     charactersIds = [
         "Dragonborn",
