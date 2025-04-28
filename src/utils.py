@@ -1,7 +1,9 @@
-def find_char(mapa, caractere):
-    for y, linha in enumerate(mapa):
-        for x, celula in enumerate(linha):
-            if celula == caractere:
+from map.mapConstants import CHARACTER_POWER, EVENT_COSTS
+
+def find_char(map, char):
+    for y, row in enumerate(map):
+        for x, cell in enumerate(row):
+            if cell == char:
                 return (x, y)
             
 def manhattan_distance(_from, to):
@@ -10,3 +12,12 @@ def manhattan_distance(_from, to):
 
 def is_valid_coord(x, y, width, height):
     return 0 <= x < width and 0 <= y < height
+
+def event_cost(event, characters):
+    sum = 0
+    for i in characters:
+        sum += CHARACTER_POWER[i]
+
+    cost = EVENT_COSTS[event] / sum
+
+    return cost

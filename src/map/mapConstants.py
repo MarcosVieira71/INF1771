@@ -53,12 +53,3 @@ CHARACTER_POWER = {
     "Balgruuf" : 1.2,
     "Delphine" : 1.0
 }
-
-def calculo_custo_evento(evento, personagens):
-    soma = 0
-    for i in personagens:
-        soma += CHARACTER_POWER[i]
-
-    dificuldade_total = EVENT_COSTS[evento] / soma
-
-    return dificuldade_total

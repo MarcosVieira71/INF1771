@@ -4,7 +4,6 @@ from PySide6.QtCore import QTimer
 
 from map.Map import Map
 from map.mapConstants import COLORS
-from algorithm.pathFind import caminho_final
 
 
 
