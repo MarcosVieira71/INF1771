@@ -1,9 +1,9 @@
 from map.mapConstants import CHARACTER_POWER, EVENT_COSTS
 
-def find_char(map, char):
-    for y, row in enumerate(map):
-        for x, cell in enumerate(row):
-            if cell == char:
+def find_char(mapa, caractere):
+    for y, linha in enumerate(mapa):
+        for x, celula in enumerate(linha):
+            if celula == caractere:
                 return (x, y)
             
 def manhattan_distance(_from, to):
@@ -17,6 +17,8 @@ def event_cost(event, characters):
     sum = 0
     for i in characters:
         sum += CHARACTER_POWER[i]
+
+    if(sum == 0): return float("inf")
 
     cost = EVENT_COSTS[event] / sum
 
