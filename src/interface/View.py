@@ -3,6 +3,7 @@ from PySide6.QtGui import QPainter, QColor, QPixmap
 from PySide6.QtCore import QTimer
 
 from map.Map import Map
+
 from map.mapConstants import EVENT_SPRITES
 from algorithm.pathFind import caminho_final
 

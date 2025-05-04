@@ -111,23 +111,23 @@ def busca_a_estrela(mapa: Map, start, end):
     return None
 
 
-def caminho_final(mapa: Map, events, personagens=None):
+def final_path(mapa: Map, events, personagens=None):
     #ordem = simulated_annealing(events)
     #MELHOR ORDEM ENCONTRADA EM VARIAS RODADAS DE SIMULATED ANNEALING:
-    ordem = ["0", "B", "K", "J", "I", "8", "6", "4", "7", "2", "1", "3", "G", "5", "C", "O", "D", "E", "H", "9", "P"]
-    #print(ordem, "rodou simmulated")
+    order = ["0", "B", "K", "J", "I", "8", "6", "4", "7", "2", "1", "3", "G", "5", "C", "O", "D", "E", "H", "9", "P"]
+    #print(order, "rodou simmulated")
     path_total = []
 
-    for i in range(len(ordem) - 1):
-        inicio = events[ordem[i]]
-        fim = events[ordem[i + 1]]
+    for i in range(len(order) - 1):
+        inicio = events[order[i]]
+        fim = events[order[i + 1]]
         caminho = busca_a_estrela(mapa, inicio, fim)
         if caminho:
             if i != 0:
                 path_total += caminho[1:]
             else: path_total += caminho
         else:
-            print(f"Nenhum caminho encontrado de {ordem[i]} para {ordem[i+1]}")
+            print(f"Nenhum caminho encontrado de {order[i]} para {order[i+1]}")
 
     return path_total[1:]
 
