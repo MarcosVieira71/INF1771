@@ -18,6 +18,8 @@ def event_cost(event, characters):
     for i in characters:
         sum += CHARACTER_POWER[i]
 
+    if(sum == 0): return float("inf")
+
     cost = EVENT_COSTS[event] / sum
 
     return cost
