@@ -10,3 +10,14 @@ def manhattan_distance(_from, to):
 
 def is_valid_coord(x, y, width, height):
     return 0 <= x < width and 0 <= y < height
+
+def event_cost(event, characters):
+    sum = 0
+    for i in characters:
+        sum += CHARACTER_POWER[i]
+
+    if(sum == 0): return float("inf")
+
+    cost = EVENT_COSTS[event] / sum
+
+    return cost
