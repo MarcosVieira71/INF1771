@@ -1,3 +1,5 @@
+from map.mapConstants import CHARACTER_POWER, EVENT_COSTS
+
 def find_char(mapa, caractere):
     for y, linha in enumerate(mapa):
         for x, celula in enumerate(linha):
