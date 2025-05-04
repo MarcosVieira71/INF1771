@@ -1,36 +1,51 @@
+import random
+import math
 from queue import PriorityQueue
 from utils import manhattan_distance
 from map.Map import Map
 
-import random
-import math
-import itertools
-
-def calcular_custo(ordem, events):
+def calcular_custo(ordem, dist_floyd):
     total = 0
     for i in range(len(ordem) - 1):
-        total += manhattan_distance(events[ordem[i]], events[ordem[i + 1]])
+        a, b = ordem[i], ordem[i + 1]
+        custo = dist_floyd[a][b]
+        if custo == float('inf'):
+            return float('inf')
+        total += custo
     return total
 
 def gerar_vizinho(ordem):
-    i, j = random.sample(range(1, len(ordem) - 1), 2)
     vizinho = ordem[:]
-    vizinho[i], vizinho[j] = vizinho[j], vizinho[i]
+    if random.random() < 0.5:
+        i, j = random.sample(range(1, len(ordem) - 1), 2)
+        vizinho[i], vizinho[j] = vizinho[j], vizinho[i]
+    else:
+        i, j = sorted(random.sample(range(1, len(ordem) - 1), 2))
+        vizinho[i:j+1] = list(reversed(vizinho[i:j+1]))
     return vizinho
 
-def simulated_annealing(events, temp_inicial=100000, temp_final=1e-6, alpha=0.9999, iter_por_temp=500):
+def escolher_ordem(events):
+    start_event = '0'
+    end_event = 'P'
+    meio = [e for e in events if e not in [start_event, end_event]]
+    random.shuffle(meio)
+    return [start_event] + meio + [end_event]
+
+def simulated_annealing(events, dist_floyd, temp_inicial=100_000, temp_final=1e-3, alpha=0.9993, iter_por_temp=1500, log=True):
     ordem_atual = escolher_ordem(events)
-    custo_atual = calcular_custo(ordem_atual, events)
+    custo_atual = calcular_custo(ordem_atual, dist_floyd)
 
     melhor_ordem = ordem_atual[:]
     melhor_custo = custo_atual
 
     temp = temp_inicial
+    iter_total = 0
 
     while temp > temp_final:
         for _ in range(iter_por_temp):
+            iter_total += 1
             vizinho = gerar_vizinho(ordem_atual)
-            custo_vizinho = calcular_custo(vizinho, events)
+            custo_vizinho = calcular_custo(vizinho, dist_floyd)
             delta = custo_vizinho - custo_atual
 
             if delta < 0 or random.random() < math.exp(-delta / temp):
@@ -40,45 +55,16 @@ def simulated_annealing(events, temp_inicial=100000, temp_final=1e-6, alpha=0.99
                 if custo_atual < melhor_custo:
                     melhor_ordem = ordem_atual[:]
                     melhor_custo = custo_atual
+                    if log:
+                        print(f"[Iter {iter_total}] >>> NOVO MELHOR <<< custo={melhor_custo:.2f}")
 
         temp *= alpha
 
+    if log:
+        print("Busca encerrada.\nMelhor ordem encontrada:", melhor_ordem)
+        print("Melhor custo final:", melhor_custo)
+
     return melhor_ordem
-
-
-def escolher_ordem(events):
-    ordem_visita = []
-    visitados = set()
-
-    start_event = '0'
-    end_event = 'P'
-
-    current_event = start_event
-    current_pos = events[current_event]
-    visitados.add(current_event)
-    ordem_visita.append(current_event)
-
-    while len(visitados) < len(events) - 1:
-        proximo_evento = None
-        menor_distancia = float('inf')
-
-        for evento, pos in events.items():
-            if evento not in visitados and evento != end_event:
-                distancia = manhattan_distance(current_pos, pos)
-                if distancia < menor_distancia:
-                    menor_distancia = distancia
-                    proximo_evento = evento
-
-        if proximo_evento is None:
-            break
-
-        visitados.add(proximo_evento)
-        ordem_visita.append(proximo_evento)
-        current_pos = events[proximo_evento]
-
-    ordem_visita.append(end_event)
-    return ordem_visita
-
 
 def busca_a_estrela(mapa: Map, start, end):
     open_list = PriorityQueue()
@@ -110,12 +96,9 @@ def busca_a_estrela(mapa: Map, start, end):
 
     return None
 
-
-def final_path(mapa: Map, events, personagens=None):
-    #ordem = simulated_annealing(events)
-    #MELHOR ORDEM ENCONTRADA EM VARIAS RODADAS DE SIMULATED ANNEALING:
-    order = ["0", "B", "K", "J", "I", "8", "6", "4", "7", "2", "1", "3", "G", "5", "C", "O", "D", "E", "H", "9", "P"]
-    #print(order, "rodou simmulated")
+def final_path(mapa: Map, events, dist_floyd, personagens=None):
+    order = simulated_annealing(events, dist_floyd)
+    print(order)
     path_total = []
 
     for i in range(len(order) - 1):

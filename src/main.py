@@ -31,15 +31,15 @@ def main():
 
     events = mapa.eventsCoord
 
-    # print("Gerando matriz de distâncias entre eventos (demora)")
-    # dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
+    print("Gerando matriz de distâncias entre eventos (demora)")
+    dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
 
-    # print("Rodando Floyd-Warshall")
-    # dist_floyd = floyd_warshall(dist_a_estrela.copy())
+    print("Rodando Floyd-Warshall")
+    dist_floyd = floyd_warshall(dist_a_estrela.copy())
 
-    # print("Testando caminhos A* contra Floyd-Warshall")
-    # validar_caminhos(mapa, eventos, dist_floyd)
-    caminho = final_path(mapa, eventos)
+    #print("Testando caminhos A* contra Floyd-Warshall")
+    #validar_caminhos(mapa, eventos, dist_floyd)
+    caminho = final_path(mapa, eventos, dist_floyd)
     valor = 0
     for i in caminho:
         valor += mapa.get_value(i)
@@ -48,11 +48,17 @@ def main():
 
     eventsFiltered = {key: events[key] for key in events if key != "0" and key != "P"}
     population = genetic_algorithm(eventsFiltered, characters)
+    print(population)
                         
     sum = 0
     for idx, el in enumerate(eventsFiltered.keys()):
         sum += event_cost(el, population[idx])
     print(sum, "CUSTO PERSONAGENS")
+
+    custo_final = sum + valor
+
+    print(f"custo final de todo trajeto: {custo_final:.6f}")
+
 
     app = QApplication(sys.argv)
     janela = View(mapa, COLORS, caminho)
