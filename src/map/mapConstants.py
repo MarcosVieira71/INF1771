@@ -1,6 +1,28 @@
 from PySide6.QtGui import QColor
 
 
+EVENT_SPRITES = {
+    "1" : "assets/evento_1",
+    "2" : "assets/evento_2",
+    "3": "assets/evento_3",
+    "4": "assets/evento_4",
+    "5": "assets/evento_5",
+    "6":"assets/evento_6",
+    "7": "assets/evento_7",
+    "8": "assets/evento_8",
+    "9": "assets/evento_9",
+    "B": "assets/evento_B",
+    "C": "assets/evento_C",
+    "D": "assets/evento_D",
+    "E": "assets/evento_E",
+    "G": "assets/evento_G",
+    "H": "assets/evento_H",
+    "I": "assets/evento_I",
+    "J": "assets/evento_J",
+    "K": "assets/evento_K",
+    "O": "assets/evento_O"
+}
+
 TERRAIN_COSTS = {
     'M': 50,
     'A': 20,
@@ -8,7 +30,9 @@ TERRAIN_COSTS = {
     'F': 10,
     'R': 5,
     '.': 1,
-    '#': -1
+    '#': -1,
+    "P": 1,
+    "0": 1
 }
 
 COLORS = {
@@ -22,7 +46,6 @@ COLORS = {
 }
 
 EVENT_COSTS = {
-    "0": 1,
     "1": 55,
     "2": 60,
     "3": 65,
@@ -41,8 +64,7 @@ EVENT_COSTS = {
     "I": 160,
     "J": 170,
     "K": 180,
-    "O": 100,
-    "P": 1
+    "O": 100
 }
 
 CHARACTER_POWER = {

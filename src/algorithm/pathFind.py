@@ -4,6 +4,7 @@ from map.Map import Map
 
 import random
 import math
+import itertools
 
 def calcular_custo(ordem, events):
     total = 0
@@ -122,11 +123,13 @@ def caminho_final(mapa: Map, events, personagens=None):
         fim = events[ordem[i + 1]]
         caminho = busca_a_estrela(mapa, inicio, fim)
         if caminho:
-            path_total += caminho
+            if i != 0:
+                path_total += caminho[1:]
+            else: path_total += caminho
         else:
             print(f"Nenhum caminho encontrado de {ordem[i]} para {ordem[i+1]}")
 
-    return path_total
+    return path_total[1:]
 
 def calcular_custo_trajeto(path, mapa):
     if not path:

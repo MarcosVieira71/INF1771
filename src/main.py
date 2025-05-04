@@ -26,6 +26,7 @@ def main():
     valor = 0
     for i in caminho:
         valor += mapa.get_value(i)
+        #print(f"coord -> {i} char {mapa.grid[i[1]][i[0]]} value-> {mapa.get_value(i)}")
     print(f"Caminho encontrado com {len(caminho)} passos:  e valor {valor}")
 
     app = QApplication(sys.argv)

@@ -20,6 +20,10 @@ class Map:
             pos = find_char(self.grid, symbol)
             if pos:
                 events[symbol] = pos
+                
+        events["0"] = find_char(self.grid,"0")
+        events["P"] = find_char(self.grid,"P")
+
         return events
 
     def get_value(self, coord):
