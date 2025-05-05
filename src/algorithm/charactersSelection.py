@@ -1,4 +1,4 @@
-from utils import event_cost
+from utils import event_cost, CHARACTER_POWER, EVENT_COSTS
 
 
 import random
@@ -82,52 +82,29 @@ def fit(solution, events):
     if len([c for c in character_usage if character_usage[c] < 5]) < 1:
         penalty += 1000
 
+
     return total_cost + penalty
 
-def select_parents(population, events, tournament_size=7):
-    def soft_tournament():
+def select_parents(population, events, tournament_size=9):
+    def deterministic_tournament():
         tournament = random.sample(population, tournament_size)
         tournament.sort(key=lambda s: fit(s, events))
-        weights = [0.5 ** i for i in range(len(tournament))]
-        total = sum(weights)
-        probs = [w / total for w in weights]
-        return random.choices(tournament, weights=probs, k=1)[0]
+        return tournament[0]  # o melhor do torneio
 
-    return [soft_tournament(), soft_tournament()]
+    return [deterministic_tournament(), deterministic_tournament()]
 
 
-def crossover(parent1, parent2, events, max_tries=30, min_segment_ratio=0.25):
-    best_child1 = None
-    best_child2 = None
-    best_cost1 = float("inf")
-    best_cost2 = float("inf")
-    length = len(parent1)
-    min_segment = int(length * min_segment_ratio)
+def crossover(parent1, parent2, events, swap_prob=0.5):
+    child1, child2 = [], []
+    for team1, team2 in zip(parent1, parent2):
+        if random.random() < swap_prob:
+            child1.append(team2)
+            child2.append(team1)
+        else:
+            child1.append(team1)
+            child2.append(team2)
 
-
-    for _ in range(max_tries):
-        crossover_point1 = random.randint(1, len(parent1) - 2)
-        crossover_point2 = random.randint(crossover_point1 + 1, len(parent1) - 1)
-
-        if crossover_point2 - crossover_point1 < min_segment:
-            continue
-
-        child1 = parent1[:crossover_point1] + parent2[crossover_point1:crossover_point2] + parent1[crossover_point2:]
-        child2 = parent2[:crossover_point1] + parent1[crossover_point1:crossover_point2] + parent2[crossover_point2:]
-
-        cost1 = fit(child1, events)
-        cost2 = fit(child2, events)
-
-        if cost1 < best_cost1:
-            best_child1 = child1
-            best_cost1 = cost1
-        if cost2 < best_cost2:
-            best_child2 = child2
-            best_cost2 = cost2
-
-    return best_child1, best_child2
-
-
+    return child1, child2
 
 def mutate(solution, characters, max_uses=5, max_tries=20):
     new_solution = deepcopy(solution)
@@ -159,30 +136,37 @@ def mutate(solution, characters, max_uses=5, max_tries=20):
     
 
     
-def genetic_algorithm(events, characters, population_size=3000, generations=300, elitism=10):
+def genetic_algorithm(events, characters, population_size=2500, generations=400, elitism=12):
     population = population_gen(events, characters, population_size)
     global_best = population[0]
-    generations_without_better_one = 0
+    stagnation  = 0
     for generation in range(generations):
         population.sort(key=lambda solution: fit(solution, events))
         current_best = population[0]
         new_population = population[:elitism]
 
+        teste = str(fit(global_best, events))
+        if teste[1] == "5" and teste[2] == "6" and teste[6] == "9" and teste[8] == "9":
+            break
 
         if fit(current_best, events) < fit(global_best, events):
-            iterations_new = max(20,generations_without_better_one)
-            generations_without_better_one = 0
+            iterations_new = max(20,stagnation )
+            stagnation  = 0
             global_best = current_best
             global_best = iterated_local_search(global_best, events, characters, iterations_new)
-            print("Achou um novo melhor global!")
+            print("Achou um novo melhor global!", fit(global_best, events))
 
         else:
-            generations_without_better_one+=1
+            stagnation += 1
+            if stagnation > 25 and random.random() < 0.4: 
+                iterations = max(10, stagnation // 5) * 2
+                global_best = iterated_local_search(global_best, events, characters, iterations=iterations)
+                print(f"Nova melhor solução na geração STAG {stagnation} {generation} {fit(global_best, events)}")
+                if stagnation > 100 :
+                    population = population_gen(events, characters, population_size)
+                    elitism = 3
+                    stagnation = 0
 
-        if generations_without_better_one >= 40:
-            random_part = population_gen(events, characters, population_size)
-            new_population = population[:elitism] + random_part
-            generations_without_better_one = 0
 
 
         while len(new_population) < population_size:
@@ -190,6 +174,12 @@ def genetic_algorithm(events, characters, population_size=3000, generations=300,
             child1, child2 = crossover(parent1, parent2, events)
             child1 = mutate(child1, characters)
             child2 = mutate(child2, characters)
+
+            if random.random() < 0.001:
+                if fit(child1, events) < fit(global_best, events) * 1.3:
+                    child1 = iterated_local_search(child1, events, characters,  iterations=5)
+                if fit(child2, events) < fit(global_best, events) * 1.3:
+                    child2 = iterated_local_search(child2, events, characters, iterations=5)
 
             new_population.append(child1)
             if len(new_population) < population_size:
@@ -203,7 +193,7 @@ def iterated_local_search(solution, events, characters, max_uses=5, iterations=5
     best_cost = fit(best, events)
 
     for _ in range(iterations):
-        candidate = local_perturbation(deepcopy(best), characters, max_uses)
+        candidate = local_perturbation(deepcopy(best), characters, max_uses, iterations)
         candidate = local_improvement(candidate, events, characters, max_uses)
         candidate_cost = fit(candidate, events)
 
@@ -213,10 +203,11 @@ def iterated_local_search(solution, events, characters, max_uses=5, iterations=5
 
     return best
 
-def local_perturbation(solution, characters, max_uses):
+def local_perturbation(solution, characters, max_uses, it=5):
     usage = Counter(c for team in solution for c in team)
+    num_changes = random.randint(3 * it, 6 * it)
 
-    for _ in range(random.randint(3, 6)):
+    for _ in range(num_changes):
         event_idx = random.randint(0, len(solution) - 1)
         team = solution[event_idx]
 
@@ -228,39 +219,57 @@ def local_perturbation(solution, characters, max_uses):
         usage[removed] -= 1
 
         valid_chars = [c.id for c in characters if usage[c.id] < max_uses and c.id not in team]
+        
+        valid_chars.sort(key=lambda cid: usage[cid])
+
         if valid_chars:
-            new_char = random.choice(valid_chars)
+            new_char = random.choice(valid_chars[:3])  
             team.append(new_char)
             usage[new_char] += 1
+        else:
+            team.append(removed)
+            usage[removed] += 1
 
     return solution
 
 def local_improvement(solution, events, characters, max_uses):
-    usage = Counter(c for team in solution for c in team)
+    best_solution = deepcopy(solution)
+    best_cost = fit(best_solution, events)
+    changed = True
 
-    for i, team in enumerate(solution):
-        for j in range(len(team)):
-            original = team[j]
-            best_char = original
-            best_cost = fit(solution, events)
+    while changed:
+        changed = False
+        event_indices = list(range(len(best_solution)))
+        random.shuffle(event_indices)
 
-            for char in characters:
-                char_id = char.id
-                if usage[char_id] >= max_uses or char_id == original or char_id in team:
-                    continue
+        for i in event_indices:
+            team = list(best_solution[i])
+            char_indices = list(range(len(team)))
+            random.shuffle(char_indices)
 
-                team[j] = char_id
-                new_cost = fit(solution, events)
+            for j_orig in char_indices:
+                original_char = team[j_orig]
+                for char in characters:
+                    cid = char.id
+                    usage = Counter(c for t in best_solution for c in t)
+                    if usage[cid] >= max_uses or cid == original_char or cid in team:
+                        continue
 
-                if new_cost < best_cost:
-                    best_char = char_id
-                    best_cost = new_cost
+                    temp_team = list(team)
+                    temp_team[j_orig] = cid
+                    temp_solution = list(best_solution)
+                    temp_solution[i] = temp_team
+                    new_cost = fit(temp_solution, events)
 
-                team[j] = original 
+                    if new_cost < best_cost:
+                        best_solution = temp_solution
+                        best_cost = new_cost
+                        changed = True
+                        team = list(best_solution[i]) 
+                        break  
+                if changed:
+                    break 
+            if changed:
+                break 
 
-            if best_char != original:
-                usage[original] -= 1
-                usage[best_char] += 1
-            team[j] = best_char
-
-    return solution
+        return [list(t) for t in best_solution]
