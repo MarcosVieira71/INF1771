@@ -55,7 +55,7 @@ def simulated_annealing(events, distanceMatrix, temp_inicial=100_000, temp_final
                 if custo_atual < melhor_custo:
                     melhor_ordem = ordem_atual[:]
                     melhor_custo = custo_atual
-                    print(f"[Iter {iter_total}] >>> NOVO MELHOR <<< custo = {melhor_custo:.2f}")
+                    #print(f"[Iter {iter_total}] >>> NOVO MELHOR <<< custo = {melhor_custo:.2f}")
 
         temp *= alpha
 
@@ -106,7 +106,8 @@ def final_path(mapa: Map, events, distanceMatrix):
                 path_total += caminho[1:]
             else: path_total += caminho
         else:
-            print(f"Nenhum caminho encontrado de {order[i]} para {order[i+1]}")
+            pass
+            #print(f"Nenhum caminho encontrado de {order[i]} para {order[i+1]}")
     
     custo = calcular_custo_trajeto(path_total, mapa)
 

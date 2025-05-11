@@ -1,14 +1,48 @@
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QDialog, QPushButton
 from PySide6.QtGui import QPainter, QColor, QPixmap
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 
 from map.Map import Map
 
 from map.mapConstants import EVENT_SPRITES
 
+class CustosDialog(QDialog):
+    def __init__(self, custos, parent=None):
+        super().__init__(parent)
+        
+        self.setWindowTitle("Custos do Trajeto")
+        self.setFixedSize(300, 200) 
+        self.setModal(True)  
+
+        layout = QVBoxLayout(self)
+
+        self.label_custos = QLabel(self)
+        self.label_custos.setAlignment(Qt.AlignCenter)  
+        layout.addWidget(self.label_custos)
+
+        self.label_custos.setStyleSheet("""
+            QLabel {
+                background-color: white;
+                color: red;
+                font-weight: bold;
+                font-size: 14px;
+                border: 2px solid red;
+                padding: 10px;
+            }
+        """)
+
+        custoTotal, custoCombinatoria, custoPath = custos
+        texto = (f"<b>Custo total: {custoTotal:.6f} Min.</b><br>"
+                 f"<b>Custo combinatório: {custoCombinatoria:.6f} Min.</b><br>"
+                 f"<b>Custo do caminho: {custoPath:.6f} Min.</b>")
+        self.label_custos.setText(texto)
+
+        button = QPushButton("Fechar", self)
+        button.clicked.connect(self.accept)
+        layout.addWidget(button)
 
 class View(QWidget):
-    def __init__(self, mapa: Map, colors: dict, caminho: list):
+    def __init__(self, mapa: Map, colors: dict, caminho: list, custos: tuple):
         super().__init__()
         self.mapa = mapa
         self.colors = colors
@@ -24,35 +58,27 @@ class View(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.atualizar_caminho)
-        self.timer.start(0.1)
+        self.timer.start(50)
 
         self.sprite = QPixmap("assets/dragonborn.png")
         self.sprite_width = self.cell_width * 15
         self.sprite_height = self.cell_height * 15
 
+        self.exibirCustosDialog(custos)
+
+    def exibirCustosDialog(self, custos):
+        custos_dialog = CustosDialog(custos, self)
+        custos_dialog.exec()  
+
     def atualizar_caminho(self):
         if self.caminho and self.caminho_index < len(self.caminho):
             self.desenhar_caminho.append(self.caminho[self.caminho_index])
             self.caminho_index += 1
-            self.update()
-        else:
-            self.timer.stop()
-    
-    """def resizeEvent(self, event):
-        cols = len(self.mapa.grid[0])
-        rows = len(self.mapa.grid)
-        self.cell_width = self.width()
-        self.cell_height = self.height()
-
-        self.sprite_width = self.cell_width * 15
-        self.sprite_height = self.cell_height * 15
-
-        self.update()"""
+            self.update()  
 
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        # Desenha o mapa
         for y, linha in enumerate(self.mapa.grid):
             for x, celula in enumerate(linha):
                 cor = self.colors.get(celula, QColor(255, 0, 0))
@@ -64,8 +90,7 @@ class View(QWidget):
                     cor
                 )
 
-        # Desenha o caminho percorrido (menos o ponto atual)
-        painter.setBrush(QColor(255, 0, 0))
+        painter.setBrush(QColor(255, 0, 0))  
         for (x, y) in self.desenhar_caminho[:-1]:
             painter.fillRect(
                 x * self.cell_width,
@@ -75,7 +100,6 @@ class View(QWidget):
                 QColor(255, 0, 0)
             )
 
-        # Desenha os eventos com sprites
         for k, v in self.mapa.eventsCoord.items():
             if k not in EVENT_SPRITES:
                 continue
@@ -89,7 +113,6 @@ class View(QWidget):
                 evento_sprite
             )
 
-        # Desenha o sprite do personagem no ponto atual
         if self.desenhar_caminho:
             x, y = self.desenhar_caminho[-1]
             painter.drawPixmap(
