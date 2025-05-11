@@ -31,7 +31,6 @@ def main():
     custoTotal = custoCombinatoria + custoPath
     print(f"custo final de todo trajeto: {custoTotal:.6f} Min.")
 
-    #TODO passar custos e combinatória p view e exibir
     app = QApplication(sys.argv)
     janela = View(map, COLORS, caminho, (custoTotal, custoCombinatoria, custoPath))
     janela.show()
