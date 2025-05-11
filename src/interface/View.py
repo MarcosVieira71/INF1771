@@ -58,7 +58,7 @@ class View(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.atualizar_caminho)
-        self.timer.start(50)
+        self.timer.start(20)
 
         self.sprite = QPixmap("assets/dragonborn.png")
         self.sprite_width = self.cell_width * 15

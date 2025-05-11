@@ -219,32 +219,32 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
         current_best = population[0]
         new_population = population[:elitism]
 
-        teste = str(fit(global_best, events))
-        if teste[1] == "5" and teste[2] == "6" and teste[6] == "9" and teste[8] == "9":
-            break
+        # teste = str(fit(global_best, events))
+        # if teste[1] == "5" and teste[2] == "6" and teste[6] == "9" and teste[8] == "9":
+        #     break
 
         if fit(current_best, events) < fit(global_best, events):
             iterations_new = max(20,stagnation )
             stagnation  = 0
             global_best = current_best
             global_best = iterated_local_search(global_best, events, characters, iterations_new)
-            print(f'Gen: {generation}\nCost: {fit(global_best, events)}\n{global_best}\n')
+            #print(f'Gen: {generation}\nCost: {fit(global_best, events)}\n{global_best}\n')
 
         else:
             stagnation += 1
             if stagnation > 25 and random.random() < 0.4:
                 iterations = max(10, stagnation // 5) * 2
                 global_best = iterated_local_search(global_best, events, characters, iterations=iterations)
-                print(f"Nova melhor solução na geração STAG {stagnation} {generation} {fit(global_best, events)}")
+                #print(f"Nova melhor solução na geração STAG {stagnation} {generation} {fit(global_best, events)}")
 
             if stagnation > 30 and diversity_metric(population) < 0.4 * population_size:
-                print(f"EARLY hard reset at generation {generation}")
+                #print(f"EARLY hard reset at generation {generation}")
                 population = [global_best] + population_gen(events, characters, population_size - 1)
                 stagnation = 0
 
 
             if stagnation > 50:
-                print(f"HARD reset at generation {generation}")
+                #print(f"HARD reset at generation {generation}")
                 population = [global_best] + population_gen(events, characters, population_size - 1)
                 stagnation = 0
 
