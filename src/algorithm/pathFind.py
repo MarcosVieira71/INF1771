@@ -4,11 +4,11 @@ from queue import PriorityQueue
 from utils import manhattan_distance
 from map.Map import Map
 
-def calcular_custo(ordem, dist_floyd):
+def calcular_custo(ordem, distanceMatrix):
     total = 0
     for i in range(len(ordem) - 1):
         a, b = ordem[i], ordem[i + 1]
-        custo = dist_floyd[a][b]
+        custo = distanceMatrix[a][b]
         if custo == float('inf'):
             return float('inf')
         total += custo
@@ -31,9 +31,9 @@ def escolher_ordem(events):
     random.shuffle(meio)
     return [start_event] + meio + [end_event]
 
-def simulated_annealing(events, dist_floyd, temp_inicial=100_000, temp_final=1e-3, alpha=0.9993, iter_por_temp=1500, log=True):
+def simulated_annealing(events, distanceMatrix, temp_inicial=100_000, temp_final=1e-3, alpha=0.9993, iter_por_temp=100):
     ordem_atual = escolher_ordem(events)
-    custo_atual = calcular_custo(ordem_atual, dist_floyd)
+    custo_atual = calcular_custo(ordem_atual, distanceMatrix)
 
     melhor_ordem = ordem_atual[:]
     melhor_custo = custo_atual
@@ -45,7 +45,7 @@ def simulated_annealing(events, dist_floyd, temp_inicial=100_000, temp_final=1e-
         for _ in range(iter_por_temp):
             iter_total += 1
             vizinho = gerar_vizinho(ordem_atual)
-            custo_vizinho = calcular_custo(vizinho, dist_floyd)
+            custo_vizinho = calcular_custo(vizinho, distanceMatrix)
             delta = custo_vizinho - custo_atual
 
             if delta < 0 or random.random() < math.exp(-delta / temp):
@@ -55,26 +55,22 @@ def simulated_annealing(events, dist_floyd, temp_inicial=100_000, temp_final=1e-
                 if custo_atual < melhor_custo:
                     melhor_ordem = ordem_atual[:]
                     melhor_custo = custo_atual
-                    if log:
-                        print(f"[Iter {iter_total}] >>> NOVO MELHOR <<< custo={melhor_custo:.2f}")
+                    print(f"[Iter {iter_total}] >>> NOVO MELHOR <<< custo = {melhor_custo:.2f}")
 
         temp *= alpha
 
-    if log:
-        print("Busca encerrada.\nMelhor ordem encontrada:", melhor_ordem)
-        print("Melhor custo final:", melhor_custo)
+    print("Busca encerrada.\n\nMelhor ordem encontrada:", melhor_ordem)
 
     return melhor_ordem
 
-def busca_a_estrela(mapa: Map, start, end):
-    open_list = PriorityQueue()
-    open_list.put((0 + manhattan_distance(start, end), 0, start))
+def busca_a_estrela(map, start, end):
+    queue = PriorityQueue()
+    queue.put((0 + manhattan_distance(start, end), 0, start))
     came_from = {}
-    g_score = {start: 0}
-    f_score = {start: manhattan_distance(start, end)}
+    realCost = {start: 0}
 
-    while not open_list.empty():
-        _, g, current = open_list.get()
+    while not queue.empty():
+        _, cost, current = queue.get()
 
         if current == end:
             path = []
@@ -85,20 +81,20 @@ def busca_a_estrela(mapa: Map, start, end):
             path.reverse()
             return path
 
-        for nb in mapa.get_neighbors(current):
-            tentative_g_score = g + mapa.get_value(nb)
+        for nb in map.get_neighbors(current):
+            newRealCost = cost + map.get_value(nb)
 
-            if nb not in g_score or tentative_g_score < g_score[nb]:
+            if nb not in realCost or newRealCost < realCost[nb]:
                 came_from[nb] = current
-                g_score[nb] = tentative_g_score
-                f_score[nb] = g_score[nb] + manhattan_distance(nb, end)
-                open_list.put((f_score[nb], g_score[nb], nb))
+                realCost[nb] = newRealCost
+                priority = newRealCost + manhattan_distance(nb, end)
+                queue.put((priority, newRealCost, nb))
 
     return None
 
-def final_path(mapa: Map, events, dist_floyd, personagens=None):
-    order = simulated_annealing(events, dist_floyd)
-    print(order)
+
+def final_path(mapa: Map, events, distanceMatrix):
+    order = simulated_annealing(events, distanceMatrix)
     path_total = []
 
     for i in range(len(order) - 1):
@@ -111,8 +107,10 @@ def final_path(mapa: Map, events, dist_floyd, personagens=None):
             else: path_total += caminho
         else:
             print(f"Nenhum caminho encontrado de {order[i]} para {order[i+1]}")
+    
+    custo = calcular_custo_trajeto(path_total, mapa)
 
-    return path_total[1:]
+    return custo, path_total[1:]
 
 def calcular_custo_trajeto(path, mapa):
     if not path:
@@ -132,22 +130,3 @@ def gerar_matriz_distancias(mapa, eventos):
                 dist[i][j] = calcular_custo_trajeto(caminho, mapa)
     
     return dist
-
-def floyd_warshall(dist):
-    eventos = list(dist.keys())
-    for k in eventos:
-        for i in eventos:
-            for j in eventos:
-                if dist[i][j] > dist[i][k] + dist[k][j]:
-                    dist[i][j] = dist[i][k] + dist[k][j]
-    return dist
-
-def validar_caminhos(mapa, eventos, dist_floyd):
-    for i in eventos:
-        for j in eventos:
-            if i == j:
-                continue
-            caminho_a_estrela = busca_a_estrela(mapa, eventos[i], eventos[j])
-            custo_a_estrela = calcular_custo_trajeto(caminho_a_estrela, mapa)
-            if custo_a_estrela != dist_floyd[i][j]:
-                print(f"Caminho {i} → {j} | A*: {custo_a_estrela} | Floyd: {dist_floyd[i][j]}")

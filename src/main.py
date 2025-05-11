@@ -1,71 +1,39 @@
-from algorithm.charactersSelection import genetic_algorithm
 from algorithm.Character import Character
-from interface.View import View
+from algorithm.pathFind import final_path, gerar_matriz_distancias
+from algorithm.charactersSelection import genetic_algorithm
+
 from map.Map import Map
-from map.mapConstants import COLORS
-from algorithm.pathFind import final_path, gerar_matriz_distancias, floyd_warshall, validar_caminhos
-from utils import event_cost
+from map.mapConstants import COLORS, CHARACTER_POWER
+
 from interface.View import View
-
 from PySide6.QtWidgets import QApplication
-
 import sys
 
 
+
 def main():
-    mapa = Map("data/mapa_skyrim.txt")
-
-    eventos = mapa.eventsCoord
-
-
-    charactersIds = [
-        "Dragonborn",
-        "Ralof",
-        "Lydia",
-        "Farengar Secret Fire",
-        "Balgruuf",
-        "Delphine"
-    ] 
-
-    characters = [Character(i) for i in charactersIds]
-
-    events = mapa.eventsCoord
+    map = Map("data/mapa_skyrim.txt")
+    eventos = map.eventsCoord
 
     print("Gerando matriz de distâncias entre eventos (demora)")
-    dist_a_estrela = gerar_matriz_distancias(mapa, eventos)
+    dist_a_estrela = gerar_matriz_distancias(map, eventos)
+    custoPath, caminho = final_path(map, eventos, dist_a_estrela)
+    print(f"Caminho encontrado com {len(caminho)} passos e custo de {custoPath} Min.\n")
 
-    print("Rodando Floyd-Warshall")
-    dist_floyd = floyd_warshall(dist_a_estrela.copy())
+    characters = [Character(i) for i in list(CHARACTER_POWER.keys())]
+    eventsFiltered = {key: eventos[key] for key in eventos if key != "0" and key != "P"}
+    custoCombinatoria, population = genetic_algorithm(eventsFiltered, characters)
+    print(f"\nMelhor combinatória encontrada: {population}")
+    print(f"Custo de combinatória encontrado com valor de {custoCombinatoria} Min.")
+    
+    custoTotal = custoCombinatoria + custoPath
+    print(f"custo final de todo trajeto: {custoTotal:.6f} Min.")
 
-    #print("Testando caminhos A* contra Floyd-Warshall")
-    #validar_caminhos(mapa, eventos, dist_floyd)
-    caminho = final_path(mapa, eventos, dist_floyd)
-    valor = 0
-    for i in caminho:
-        valor += mapa.get_value(i)
-        #print(f"coord -> {i} char {mapa.grid[i[1]][i[0]]} value-> {mapa.get_value(i)}")
-    print(f"Caminho encontrado com {len(caminho)} passos:  e valor {valor}")
-
-    eventsFiltered = {key: events[key] for key in events if key != "0" and key != "P"}
-    population = genetic_algorithm(eventsFiltered, characters)
-    print(population)
-                        
-    sum = 0
-    for idx, el in enumerate(eventsFiltered.keys()):
-        sum += event_cost(el, population[idx])
-    print(sum, "CUSTO PERSONAGENS")
-
-    custo_final = sum + valor
-
-    print(f"custo final de todo trajeto: {custo_final:.6f}")
-
-
+    #TODO passar custos e combinatória p view e exibir
     app = QApplication(sys.argv)
-    janela = View(mapa, COLORS, caminho)
+    janela = View(map, COLORS, caminho)
     janela.show()
     sys.exit(app.exec())
-
-
 
 if __name__ == "__main__":
     main()

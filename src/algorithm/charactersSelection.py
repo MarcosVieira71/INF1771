@@ -1,12 +1,16 @@
-from utils import event_cost, CHARACTER_POWER, EVENT_COSTS
+from utils import event_cost
 
-
-import random
-from copy import deepcopy
 from collections import Counter
+from copy import deepcopy
+import random
 
 
-
+def solutionCost(solution, events):
+    total_cost = 0
+    for i, event in enumerate(events):
+        assigned_characters = solution[i]
+        total_cost += event_cost(event, assigned_characters)
+    return total_cost
 
 def population_gen(events, characters, size):
     population = []
@@ -63,10 +67,7 @@ def try_generate_individual(events, characters, usage_left, max_per_event):
 
 
 def fit(solution, events):
-    total_cost = 0
-    for i, event in enumerate(events):
-        assigned_characters = solution[i]
-        total_cost += event_cost(event, assigned_characters)
+    total_cost = solutionCost(solution, events)
     character_usage = {}
     for assigned_characters in solution:
         for char in assigned_characters:
@@ -186,7 +187,9 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
                 new_population.append(child2)
 
         population = new_population
-    return global_best
+
+    bestCost = solutionCost(global_best, events)
+    return bestCost, global_best
 
 def iterated_local_search(solution, events, characters, max_uses=5, iterations=5):
     best = deepcopy(solution)
