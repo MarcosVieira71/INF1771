@@ -21,7 +21,7 @@ def population_gen(events, characters, size):
 
         success = True
         for _ in events:
-            # Evite times vazios, favoreça 1 a 2 membros
+           
             team_size = random.choice([1, 2])
             team = []
 
@@ -44,7 +44,7 @@ def population_gen(events, characters, size):
         if not success:
             continue
 
-        # Verifique se há ao menos um personagem com menos de 5 usos
+        
         used_counts = Counter(c for team in individual for c in team)
         if not any(used_counts[c.id] < max_uses for c in characters):
             continue
@@ -121,6 +121,10 @@ def select_parents(population, events, tournament_size=9):
     return [deterministic_tournament(), deterministic_tournament()]
 
 
+def diversity_metric(population):
+    unique = set(tuple(sorted(team)) for sol in population for team in sol)
+    return len(unique) / len(population)
+
 def crossover(parent1, parent2, events, swap_prob=0.5):
     child1, child2 = [], []
     for team1, team2 in zip(parent1, parent2):
@@ -141,19 +145,18 @@ def mutate(solution, characters, max_uses=5, max_tries=20, last_event_tweak_prob
     new_solution = deepcopy(solution)
     usage = Counter(char for team in new_solution for char in team)
 
-    # With some probability, reassign the last event completely
+   
     if random.random() < last_event_tweak_prob:
         last_idx = len(new_solution) - 1
-        # Remove old usage from last team
+        
         for char_id in new_solution[last_idx]:
             usage[char_id] -= 1
 
-        # Try to build a new team of 1-2 underused characters
         candidates = [char for char in characters if usage[char.id] < max_uses]
         if candidates:
             weights = [max_uses - usage[char.id] for char in candidates]
             team_size = random.choice([1, 2])
-            team_size = min(team_size, len(candidates))  # avoid index error
+            team_size = min(team_size, len(candidates))  
 
             new_team = []
             while len(new_team) < team_size and candidates:
@@ -167,7 +170,6 @@ def mutate(solution, characters, max_uses=5, max_tries=20, last_event_tweak_prob
             new_solution[last_idx] = new_team
             return new_solution
 
-    # Normal mutation (adaptive diversity)
     non_empty_indices = [i for i, team in enumerate(new_solution) if team]
     if not non_empty_indices:
         return new_solution
@@ -196,7 +198,6 @@ def mutate(solution, characters, max_uses=5, max_tries=20, last_event_tweak_prob
     return solution
 
 
-
     
 
     
@@ -205,8 +206,10 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
     global_best = population[0]
     stagnation  = 0
     for generation in range(generations):
-        if generation % 10 == 0:
-            population[0] = iterated_local_search(population[0], events, characters, iterations=20)
+        if generation % 6 == 0:
+            for i in range(min(5, len(population))):  # Top 5 individuals
+                population[i] = iterated_local_search(population[i], events, characters, iterations=10)
+
 
         population.sort(key=lambda solution: fit(solution, events))
         current_best = population[0]
@@ -225,14 +228,23 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
 
         else:
             stagnation += 1
-            if stagnation > 25 and random.random() < 0.4: 
+            if stagnation > 25 and random.random() < 0.4:
                 iterations = max(10, stagnation // 5) * 2
                 global_best = iterated_local_search(global_best, events, characters, iterations=iterations)
                 print(f"Nova melhor solução na geração STAG {stagnation} {generation} {fit(global_best, events)}")
-                if stagnation > 100 :
-                    population = population_gen(events, characters, population_size)
-                    elitism = 3
-                    stagnation = 0
+
+            if stagnation > 30 and diversity_metric(population) < 0.4 * population_size:
+                print(f"EARLY hard reset at generation {generation}")
+                population = [global_best] + population_gen(events, characters, population_size - 1)
+                stagnation = 0
+
+
+            if stagnation > 50:
+                print(f"HARD reset at generation {generation}")
+                population = [global_best] + population_gen(events, characters, population_size - 1)
+                stagnation = 0
+
+
 
 
 
