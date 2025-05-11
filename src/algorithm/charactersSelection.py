@@ -12,6 +12,7 @@ def solutionCost(solution, events):
         total_cost += event_cost(event, assigned_characters)
     return total_cost
 
+
 def population_gen(events, characters, size):
     population = []
     unique_representations = set()
@@ -19,24 +20,52 @@ def population_gen(events, characters, size):
     attempts = 0
 
     max_uses = 5
-    max_per_event = 5
-
     while len(population) < size and attempts < max_attempts:
         attempts += 1
 
-        usage_left = {char: max_uses for char in characters}
-        individual = try_generate_individual(events, characters, usage_left, max_per_event)
+        usage_left = {char.id: max_uses for char in characters}
+        individual = []
 
-        if individual:
-            repr_individual = tuple(tuple(sorted(team)) for team in individual)
+        success = True
+        for _ in events:
+            # Evite times vazios, favoreça 1 a 2 membros
+            team_size = random.choice([1, 2])
+            team = []
 
-            if repr_individual not in unique_representations:
-                population.append(individual)
-                unique_representations.add(repr_individual)
+            tries = 0
+            while len(team) < team_size and tries < 50:
+                tries += 1
+                candidates = [c.id for c in characters if usage_left[c.id] > 0 and c.id not in team]
+                if not candidates:
+                    break
+                chosen = random.choice(candidates)
+                team.append(chosen)
+                usage_left[chosen] -= 1
+
+            if not team:
+                success = False
+                break
+
+            individual.append(team)
+
+        if not success:
+            continue
+
+        # Verifique se há ao menos um personagem com menos de 5 usos
+        used_counts = Counter(c for team in individual for c in team)
+        if not any(used_counts[c.id] < max_uses for c in characters):
+            continue
+
+        repr_individual = tuple(tuple(sorted(team)) for team in individual)
+        if repr_individual not in unique_representations:
+            population.append(individual)
+            unique_representations.add(repr_individual)
 
     if len(population) < 2:
         raise ValueError("Não foi possível gerar pelo menos 2 indivíduos válidos com as restrições.")
     return population
+
+
 
 def try_generate_individual(events, characters, usage_left, max_per_event):
     event_slots = [[] for _ in events]
@@ -86,6 +115,7 @@ def fit(solution, events):
 
     return total_cost + penalty
 
+
 def select_parents(population, events, tournament_size=9):
     def deterministic_tournament():
         tournament = random.sample(population, tournament_size)
@@ -107,10 +137,41 @@ def crossover(parent1, parent2, events, swap_prob=0.5):
 
     return child1, child2
 
-def mutate(solution, characters, max_uses=5, max_tries=20):
+import random
+from collections import Counter
+from copy import deepcopy
+
+def mutate(solution, characters, max_uses=5, max_tries=20, last_event_tweak_prob=0.15):
     new_solution = deepcopy(solution)
     usage = Counter(char for team in new_solution for char in team)
 
+    # With some probability, reassign the last event completely
+    if random.random() < last_event_tweak_prob:
+        last_idx = len(new_solution) - 1
+        # Remove old usage from last team
+        for char_id in new_solution[last_idx]:
+            usage[char_id] -= 1
+
+        # Try to build a new team of 1-2 underused characters
+        candidates = [char for char in characters if usage[char.id] < max_uses]
+        if candidates:
+            weights = [max_uses - usage[char.id] for char in candidates]
+            team_size = random.choice([1, 2])
+            team_size = min(team_size, len(candidates))  # avoid index error
+
+            new_team = []
+            while len(new_team) < team_size and candidates:
+                chosen = random.choices(candidates, weights=weights, k=1)[0]
+                if chosen.id not in new_team:
+                    new_team.append(chosen.id)
+                    usage[chosen.id] += 1
+                    idx = candidates.index(chosen)
+                    candidates.pop(idx)
+                    weights.pop(idx)
+            new_solution[last_idx] = new_team
+            return new_solution
+
+    # Normal mutation (adaptive diversity)
     non_empty_indices = [i for i, team in enumerate(new_solution) if team]
     if not non_empty_indices:
         return new_solution
@@ -123,16 +184,22 @@ def mutate(solution, characters, max_uses=5, max_tries=20):
         old_char = team[remove_idx]
         usage[old_char] -= 1
 
-        valid_chars = [char for char in characters if usage[char.id] < max_uses and char.id != old_char]
+        valid_chars = [char for char in characters if usage[char.id] < max_uses and char.id != old_char and char.id not in team]
         if not valid_chars:
             continue
 
-        new_char = random.choice(valid_chars)
-        if new_char.id != old_char and new_char.id not in team:
-            team[remove_idx] = new_char.id
-            return new_solution
+        weights = [max_uses - usage[char.id] for char in valid_chars]
+        total_weight = sum(weights)
+        if total_weight == 0:
+            continue
+
+        new_char = random.choices(valid_chars, weights=weights, k=1)[0]
+        team[remove_idx] = new_char.id
+        return new_solution
 
     return solution
+
+
 
     
 
@@ -142,6 +209,9 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
     global_best = population[0]
     stagnation  = 0
     for generation in range(generations):
+        if generation % 10 == 0:
+            population[0] = iterated_local_search(population[0], events, characters, iterations=20)
+
         population.sort(key=lambda solution: fit(solution, events))
         current_best = population[0]
         new_population = population[:elitism]
@@ -155,7 +225,7 @@ def genetic_algorithm(events, characters, population_size=2500, generations=400,
             stagnation  = 0
             global_best = current_best
             global_best = iterated_local_search(global_best, events, characters, iterations_new)
-            print("Achou um novo melhor global!", fit(global_best, events))
+            print(f'Gen: {generation}\nCost: {fit(global_best, events)}\n{global_best}\n')
 
         else:
             stagnation += 1
